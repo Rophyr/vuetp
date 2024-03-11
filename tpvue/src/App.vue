@@ -1,85 +1,45 @@
-<script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
-
-  <RouterView />
+  <div class="navbar">
+    <router-link class="nav-link" to="/">Home</router-link>
+    <router-link class="nav-link" to="/cards">Cartes</router-link>
+    <input type="text" v-model="searchQuery" @input="searchCards" placeholder="Rechercher une carte par son nom">
+    <CardList :cards="filteredCards" />
+    <SetList :sets="sets" />
+  </div>
 </template>
 
-<style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
+<script setup>
+import { onMounted, ref, computed } from 'vue'
+import axios from 'axios'
+import CardList from './components/CardList.vue'
+import SetList from './components/SetList.vue'
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
+const cards = ref([])
+const sets = ref([])
+const searchQuery = ref('')
 
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
+onMounted(async () => {
+  try {
+    const responseCards = await axios.get(`https://api.magicthegathering.io/v1/cards`)
+    cards.value = responseCards.data.cards
 
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
+    const responseSets = await axios.get(`https://api.magicthegathering.io/v1/sets`)
+    sets.value = responseSets.data.sets
+  } catch (error) {
+    console.error(error)
   }
+})
 
-  .logo {
-    margin: 0 2rem 0 0;
+const filteredCards = computed(() => {
+  if (!searchQuery.value) {
+    return cards.value
+  } else {
+    const searchTerm = searchQuery.value.trim().toLowerCase()
+    return cards.value.filter(card => card.name.toLowerCase().includes(searchTerm))
   }
+})
 
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
+function searchCards() {
+  // Pas besoin de faire quelque chose ici, la recherche se fait automatiquement grâce à computed
 }
-</style>
+</script>
